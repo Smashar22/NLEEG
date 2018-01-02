@@ -6,7 +6,7 @@ class Ui_user_script(object):
     def plot_it(self, base, data):
         #code: plots the text data
         user_script = self.textEdit.toPlainText()
-        base.user_plot(user_script)
+        base.user_plot(user_script, data)
 
     def save_it(self, base, data):
         #code: saves the text data
@@ -49,19 +49,19 @@ class Ui_user_script(object):
             self.textEdit.setText(self.textEdit.toPlainText() +
                             "\n #Click Plot and NLEEG will take care of the rest")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                    "\n\n\n#self.plot_arr = []   # contains all plots")
+                        "\n\n\nself.lines = []   # contains all lines")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                        "\n\n#self.lines = []   # contains all lines")
+                  "\n\nself.figure2.clear() \t\t\t #clears window for new plot")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                    "\n\n#data[] is a dictionary containing all variables")
+                     "\nax = self.figure2.add_subplot(1,1,1) \t\t\t #adds plot")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                  "\n\n# self.figure2.clear() \t\t\t #clears window for new plot")
+                              "\nT = np.arange(0.0, 2.0, 0.01) \t\t\t #x axis ticks")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                     "\n# ax = self.figure2.add_subplot(1,1,1) \t\t\t #adds plot")
+                              "\nQ = 1 + np.sin(2*np.pi*T) \t\t\t #use a sine wave as data")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                              "\n# ax.plot(T, Q) \t\t\t #plots variables T and Q")
+                              "\nax.plot(T, Q) \t\t\t #plots variables T and Q")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                             "\n# self.canvas2.draw() \t\t\t #redraws the canvas")
+                             "\nself.canvas2.draw() \t\t\t #redraws the canvas")
             self.textEdit.setText(self.textEdit.toPlainText() +
                 "\n\n# <--- Remove the hash marks at the front to uncomment code")                                      
             self.textEdit.setText(self.textEdit.toPlainText() +

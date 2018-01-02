@@ -7,7 +7,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from sklearn import preprocessing
 from scipy.fftpack import fft, ifft, rfft
-from scipy.signal import hilbert
+from scipy.signal import lfilter, hilbert, butter, freqz
 from loadFile import Ui_inputFile
 from setMarker import Ui_setMarker
 from scalpMap import Ui_scalpMap
@@ -16,16 +16,11 @@ from jumpP import Ui_jumpP
 from sliceD import Ui_slice_D
 from loadFFT import Ui_fft_win
 from loadHilbert import Ui_hilbert_win
+from loadBandp import Ui_loadBandp_win
+from chanPass import Ui_chanPass
 
 import time
 
-
-"""
-deleting widgets method
-layout.removeWidget(self.widget_name)
-self.widget_name.deleteLater()
-self.widget_name = None
-"""
 
 class Ui_Form(object):
 
@@ -65,6 +60,7 @@ class Ui_Form(object):
         # mark_arr[2] = label
 
         # Top graph for word
+        self.mark_list.append(mark_arr[0])
         self.plot_arr[0].axvline(x=mark_arr[0], color='r', linestyle=':', linewidth=0.5) 
         self.plot_arr[0].text(mark_arr[0], self.lines[0].max(),
                               str(mark_arr[2]) + ', ' + str(mark_arr[1]) + 'ms',
@@ -325,23 +321,7 @@ class Ui_Form(object):
         self.verticalLayout_3.addWidget(self.label)
 
     def low_bandP(self, data):
-        # scipy.signal.lfilter
-        """
-        a = self.figure2.add_subplot(1,1,1)
-        a.plot([1,2,3,4])
-        plt.ylabel('some numbers')
-        self.canvas2.draw()
-        # spell out the args that were passed to the Matlab function
-        N = 10
-        Fc = 40
-        Fs = 1600
-        # provide them to firwin
-        # h = scipy.signal.firwin(numtaps=N, cutoff=40, nyq=Fs/2)
-        # 'x' is the time-series data you are filtering
-        # y = scipy.signal.lfilter(h, 1.0, x)
-        """
-
-        """ Start Logic for when bandpass filter is ready
+        #code: sets up the bandpass load window
         if data["ch_cnt"] == 0:
             warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'No Data Has Been Loaded To Plotter',
                                     QtWidgets.QMessageBox.Ok)
@@ -350,14 +330,53 @@ class Ui_Form(object):
             else:
                 pass
         else:
-        """
+            self.window9 = QtWidgets.QWidget()
+            temp9 = Ui_loadBandp_win()
+            temp9.setupUi9(self, self.window9, data)
+            self.window9.show()
 
-        warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'Unimplemented Feature',
-                                    QtWidgets.QMessageBox.Ok) #| QtWidgets.QMessageBox.No)
-        if warn == QtWidgets.QMessageBox.Ok:
-            print('Returning to Main Window')
+    def chan_pass_plot(self, data, ch_num, samp_rate, num_samps, time_ln,
+                             nyquist, start_t, end_t, order, lowcut, highcut):
+        # code: plots the changes to the eeg plot from bandpass filter
+
+        # Start Logic for when bandpass filter is ready
+        if data["ch_cnt"] == 0:
+            warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'No Data Has Been Loaded To Plotter',
+                                    QtWidgets.QMessageBox.Ok)
+            if warn == QtWidgets.QMessageBox.Ok:
+                print('Return to Main')
+            else:
+                pass
         else:
-            pass
+            self.figure2.clear()
+            fs = data["samp_rate"]
+            nyq = data["nyquist"]
+
+            low = lowcut/nyq
+            high = highcut/nyq
+            b, a = butter(order, [low, high], btype='band')
+            w, h = freqz(b, a, worN=2000)
+
+            d = self.figure2.add_subplot(1,1,1)
+            d.plot((fs*0.5/ np.pi) * w, abs(h), label="Order %d Frequency Response" % order)
+            d.set_xlabel('Frequency (Hz)')
+            d.set_ylabel('Gain')
+            d.legend(loc='best')
+            self.canvas2.draw()
+
+        # Prep the chopped data and send to new plot window
+        orig_plot = self.lines[(ch_num-1)][start_t:end_t]
+        pass_plot = self.lines[(ch_num-1)][start_t:end_t]
+        pass_plot = lfilter(b, a, pass_plot)
+        nsamps = end_t - start_t
+        T = 1.0 / samp_rate
+        time = np.linspace(0, nsamps*T, nsamps, endpoint = False)
+
+        #Loads new timeline plot for altered eeg data
+        self.window10 = QtWidgets.QWidget()
+        temp10 = Ui_chanPass()
+        temp10.setupUi10(self, self.window10, data, time, orig_plot, pass_plot)
+        self.window10.show()
 
     def nleeg_fft(self, data):
 
@@ -384,32 +403,50 @@ class Ui_Form(object):
             temp6.setupUi6(self, self.window6, data)
             self.window6.show()
 
-    def plot_fft(self, data, ch_num, samp_rate, num_samps, time_ln, nyquist):
+    def plot_fft(self, data, ch_num, samp_rate, num_samps, time_ln, nyquist, start_t, end_t):
         # code: computes the fft and plots it
         # scaled = preprocessing.scale(self.lines[(ch_num-1)])
 
-        self.figure2.clear()
-        N = num_samps # Number of samplepoints
-        Fs = samp_rate # Sample Rate
-        # sample spacing
-        T = 1.0 / Fs # N_samps*T (#samples x sample period) is the sample spacing.
-        N_fft = samp_rate/10        # Number of bins (chooses granularity), samp_rate/10
-        x = np.linspace(0.0, N*T, N) # the interval
-        y = self.lines[(ch_num-1)] # the signal
-        
-        # removing the mean of the signal
-        mean_removed = np.ones_like(y)*np.mean(y)
-        y = y - mean_removed
+        print(start_t, end_t)
 
-        yf = fft(y, n=N_fft) # Compute the fft
-        xf = np.arange(0,Fs,Fs/N_fft)
-        # xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
-        d = self.figure2.add_subplot(1,1,1)
-        d.plot(xf,np.abs(yf), lw=2.0, c='b')
-        d.set_ylabel('FFT magnitude (power)')
-        d.set_xlabel('Frequency (Hz)')
-        # d.set_title('FFT', fontsize= 20, fontweight="bold")
-        self.canvas2.draw()
+        if start_t > end_t:
+            # error msg: incorrect values
+            warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'Start Time is after End Time',
+                                    QtWidgets.QMessageBox.Ok)
+            if warn == QtWidgets.QMessageBox.Ok:
+                print('Return to Main')
+            else:
+                pass
+        elif 0 > ch_num > data["ch_cnt"]:
+            # error msg: channel outside of range
+            warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'Channel Number too High',
+                                    QtWidgets.QMessageBox.Ok)
+            if warn == QtWidgets.QMessageBox.Ok:
+                print('Return to Main')
+            else:
+                pass
+        else:
+            self.figure2.clear()
+            N = num_samps # Number of samplepoints
+            Fs = samp_rate # Sample Rate
+            # sample spacing
+            T = 1.0 / Fs # N_samps*T (#samples x sample period) is the sample spacing.
+            N_fft = samp_rate/100        # Number of bins (chooses granularity), samp_rate/10
+            x = np.linspace(0.0, N*T, N) # the interval
+            y = self.lines[(ch_num-1)][start_t:end_t]   # the signal
+
+            # mean adjusted
+            m_rem = np.ones_like(y)*np.mean(y)
+            y = y - m_rem
+            yf = fft(y, n=N_fft) # Compute the fft
+            xf = np.arange(0,Fs,Fs/N_fft)
+            # xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
+            d = self.figure2.add_subplot(1,1,1)
+            d.plot(xf,np.abs(yf), lw=2.0, c='b')
+            d.set_ylabel('FFT magnitude (power)')
+            d.set_xlabel('Frequency (Hz)')
+            # d.set_title('FFT', fontsize= 20, fontweight="bold")
+            self.canvas2.draw()
 
     def nleeg_hilbert(self, data):
         # scipy.signal.hilbert()
@@ -426,16 +463,19 @@ class Ui_Form(object):
             temp7.setupUi7(self, self.window7, data)
             self.window7.show()
 
-    def plot_hilb(self, data, ch_num, samp_rate, num_samps, time_ln, nyquist):
+    def plot_hilb(self, data, ch_num, samp_rate, num_samps, time_ln, nyquist, start_t, end_t):
         # code: computes the hilbert transform and plots it
+
+        print(start_t, end_t)
 
         self.figure2.clear()
         a = self.figure2.add_subplot(1,1,1)
         self.figure2.tight_layout(pad=3.0, w_pad=1.0, h_pad=2.0)
 
+        num_samps = end_t-start_t
         time = np.arange(0, num_samps)
 
-        sig = self.lines[(ch_num-1)]
+        sig = self.lines[(ch_num-1)][start_t:end_t]
 
         # removing the mean of the signal
         mean_removed = np.ones_like(sig)*np.mean(sig)
@@ -452,14 +492,15 @@ class Ui_Form(object):
         inst_phase = np.unwrap(np.angle(an_sig))
         inst_freq = (np.diff(inst_phase)/(2*np.pi)*samp_rate)
 
-        imagine = a.plot(time, an_sig.imag, color = 'black', linewidth=0.4)
-        real = a.plot(time, an_sig.real, color = 'blue', linewidth=0.4)
-        envy = a.plot(time, envelope, color = 'green', linewidth=0.4)
+        imagine = a.plot(time, an_sig.imag, color = 'black', linewidth=0.4, label="Imaginary")
+        real = a.plot(time, an_sig.real, color = 'blue', linewidth=0.4, label="Real")
+        envy = a.plot(time, envelope, color = 'green', linewidth=0.4, label="Envelope")
         # plt.legend()
         a.set_ylabel('Amplitude', fontsize=8)
         a.set_xlabel('Time', fontsize=8)
         plt.xticks(fontsize=6)
         plt.yticks(fontsize=6)
+        a.legend(loc='best')
         # a.set_title('Hilbert Transform', fontsize= 20, fontweight="bold")
         self.canvas2.draw()
 
@@ -472,12 +513,11 @@ class Ui_Form(object):
             warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'No Data Has Been Loaded To Plotter',
                                     QtWidgets.QMessageBox.Ok)
             if warn == QtWidgets.QMessageBox.Ok:
-                print('Return to Main')
+                print('')
             else:
                 pass
         elif self.xlim_max > 1000:
             try:
-                print(self.xlim_min, self.xlim_max)
                 self.xlim_min = int(self.xlim_min * 1.25)
                 self.xlim_min = math.ceil(self.xlim_min / 1000) * 1000         
                 self.xlim_max = int(self.xlim_max / 1.25)
@@ -491,15 +531,13 @@ class Ui_Form(object):
         else:
             print('Closest Zoom Position')
 
-
-
     def zoom_away(self, data):
         #code: zoom out about 25%
         if data["ch_cnt"] == 0:
             warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'No Data Has Been Loaded To Plotter',
                                     QtWidgets.QMessageBox.Ok)
             if warn == QtWidgets.QMessageBox.Ok:
-                print('Return to Main')
+                print('')
             else:
                 pass
         else:
@@ -531,20 +569,22 @@ class Ui_Form(object):
         else:
             self.window4 = QtWidgets.QWidget()
             temp4 = Ui_jumpP()
-            temp4.setupUi4(self, self.window4, data)
+            temp4.setupUi4(self, self.window4, data, self.mark_list)
             self.window4.show()
 
     def jump_to_load(self, data):
-        #code: jumps to the specified location
-        location = data
-        if (data - 10) > 0:
-            self.xlim_min = data - 10
+        #code: jumps to the specified data location
+
+        margin = data/4
+        if (data - margin) > 0:
+            self.xlim_min = data - margin
         else:
             self.xlim_min = 0
-        self.xlim_max = data + 10
+
+        self.xlim_max = data + margin
         self.plot_arr[0].set_xlim(xmin=self.xlim_min, xmax=self.xlim_max)
-        ticks_r = int(self.xlim_max - self.xlim_min)
-        self.plot_arr[0].set_xticks(np.arange(ticks_r))
+        ticks_r = int(int(self.xlim_max - self.xlim_min)/4)
+        self.plot_arr[0].set_xticks(np.arange(self.xlim_min, self.xlim_max, ticks_r))
         self.canvas.draw()
 
     def slice_D(self, data):
@@ -595,7 +635,7 @@ class Ui_Form(object):
 
 #---------------------
 #
-    def user_plot(self, user_string):
+    def user_plot(self, user_string, data):
         # code:plots the user's algorithm
         self.figure2.clear()
         try:
@@ -639,6 +679,16 @@ class Ui_Form(object):
             self.horizontalLayout_2.addWidget(self.new_userAlgo_btn[self.button_cntr])
             self.button_cntr = self.button_cntr + 1
 
+    def error(self):
+        #code: delivers error message relating to algorithm usage
+        warn = QtWidgets.QMessageBox.question(self, 'Empty!', 
+                'Incorrect Channel or Start/End Time\n Try to fill all the Fields',
+                                QtWidgets.QMessageBox.Ok)
+        if warn == QtWidgets.QMessageBox.Ok:
+            print('')
+        else:
+            pass
+
     def setupUi(self, Form, data):
         Form.setObjectName("Form")
         Form.resize(1200, 751)
@@ -655,6 +705,7 @@ class Ui_Form(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
 
         self.script_save = ""
+        self.mark_list = []
 
         # Plotting Canvas
         self.plotter = QtWidgets.QWidget()

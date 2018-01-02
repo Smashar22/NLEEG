@@ -6,12 +6,8 @@ class Ui_inputFile(object):
 
     def chooseCsv(self, base, file):
         file["file_csv"] = self.listWidget.currentItem().text()
-
-        if self.textEdit.toPlainText() == '':
-            print('No sample rate entered: defaulted to 1000Hz')
-            file["samp_rate"] = 1000
-        else:
-            file["samp_rate"] = int(self.textEdit.toPlainText())
+        print('Unless altered: sample rate defaulted to 1000Hz')
+        file["samp_rate"] = int(self.textEdit.toPlainText())
         base.loadUpCsv(file)
 
     def setupUi2(self, base, inputFile, file):
@@ -38,6 +34,7 @@ class Ui_inputFile(object):
         self.textEdit = QtWidgets.QTextEdit(inputFile)
         self.textEdit.setMaximumSize(QtCore.QSize(16777215, 25))
         self.textEdit.setObjectName("textEdit")
+        self.textEdit.setText('1000')
         self.horizontalLayout.addWidget(self.textEdit)
         self.verticalLayout.addLayout(self.horizontalLayout)
 

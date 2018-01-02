@@ -1,7 +1,7 @@
 import os, sys, time
 from PyQt5 import QtWidgets, QtGui, QtCore
-import nleeg, loadFile, setMarker, scalpMap, jumpP
-import sliceD, loadFFT, loadHilbert, userScript
+import nleeg, loadFile, setMarker, scalpMap, jumpP, chanPass
+import sliceD, loadFFT, loadHilbert, userScript, loadBandp
 
 
 class nleegStart(QtWidgets.QWidget):
@@ -27,7 +27,8 @@ class nleegStart(QtWidgets.QWidget):
 class nleegApp(QtWidgets.QWidget, nleeg.Ui_Form, loadFile.Ui_inputFile, 
                setMarker.Ui_setMarker, scalpMap.Ui_scalpMap, jumpP.Ui_jumpP,
                sliceD.Ui_slice_D, loadFFT.Ui_fft_win, userScript.Ui_user_script,
-               loadHilbert.Ui_hilbert_win):
+               loadHilbert.Ui_hilbert_win, loadBandp.Ui_loadBandp_win,
+               chanPass.Ui_chanPass):
 
     def __init__(self):
         super(self.__class__, self).__init__()

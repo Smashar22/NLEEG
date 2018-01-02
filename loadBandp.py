@@ -1,29 +1,32 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import nleeg
 
-class Ui_fft_win(object):
+class Ui_loadBandp_win(object):
 
     def send_vars(self, base, data):
         #code: sends variables to plotter function
-        try:
-            ch_num = int(self.textEdit.toPlainText())
-            start_t = int(self.textEdit_6.toPlainText())
-            end_t = int(self.textEdit_7.toPlainText())
-            samp_rate = int(self.textEdit_2.toPlainText())
-            num_samps = int(self.textEdit_3.toPlainText())
-            time_len = int(self.textEdit_4.toPlainText())
-            nyquist = int(self.textEdit_5.toPlainText())
-            base.plot_fft(data, ch_num, samp_rate, num_samps,
-                                            time_len, nyquist, start_t, end_t)
-        except:
-            base.error()
+        # try:
+        ch_num = int(self.textEdit.toPlainText())
+        start_t = int(self.textEdit_6.toPlainText())
+        end_t = int(self.textEdit_7.toPlainText())
+        order = int(self.textEdit_8.toPlainText())
+        lowcut = float(self.textEdit_9.toPlainText())
+        highcut = float(self.textEdit_10.toPlainText())
+        samp_rate = int(self.textEdit_2.toPlainText())
+        num_samps = int(self.textEdit_3.toPlainText())
+        time_len = int(self.textEdit_4.toPlainText())
+        nyquist = int(self.textEdit_5.toPlainText())
+        base.chan_pass_plot(data, ch_num, samp_rate, num_samps, time_len,
+                          nyquist, start_t, end_t, order, lowcut, highcut)
+        # except:
+            # base.error()
 
-    def setupUi6(self, base, fft_win, data):
+    def setupUi9(self, base, fft_win, data):
         fft_win.setObjectName("fft_win")
         fft_win.resize(280, 166)
-        fft_win.setMinimumSize(QtCore.QSize(260, 316))
-        fft_win.setMaximumSize(QtCore.QSize(260, 316))
-        fft_win.move(578, 374)
+        fft_win.setMinimumSize(QtCore.QSize(260, 416))
+        fft_win.setMaximumSize(QtCore.QSize(260, 416))
+        fft_win.move(578, 274)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(fft_win)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.verticalLayout = QtWidgets.QVBoxLayout()
@@ -42,9 +45,7 @@ class Ui_fft_win(object):
         self.horizontalLayout_4.addWidget(self.label)
         self.textEdit = QtWidgets.QTextEdit(fft_win)
         self.textEdit.setObjectName("textEdit")
-        #
-        # self.textEdit.setText("Chan Select")
-        #
+
         self.horizontalLayout_4.addWidget(self.textEdit)
         self.verticalLayout.addLayout(self.horizontalLayout_4)
         ######
@@ -74,6 +75,45 @@ class Ui_fft_win(object):
         self.textEdit_7.setObjectName("textEdit_7")
         self.horizontalLayout_7.addWidget(self.textEdit_7)
         self.verticalLayout.addLayout(self.horizontalLayout_7)
+
+        self.label_9 = QtWidgets.QLabel(fft_win)
+        self.label_9.setMinimumSize(QtCore.QSize(128, 30))
+        self.label_9.setMaximumSize(QtCore.QSize(128, 15))
+        self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_9.setObjectName("label_9")
+        self.horizontalLayout_8 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_8.setObjectName("horizontalLayout_8")
+        self.horizontalLayout_8.addWidget(self.label_9)
+        self.textEdit_8 = QtWidgets.QTextEdit(fft_win)
+        self.textEdit_8.setObjectName("textEdit_8")
+        self.horizontalLayout_8.addWidget(self.textEdit_8)
+        self.verticalLayout.addLayout(self.horizontalLayout_8)
+
+        self.label_10 = QtWidgets.QLabel(fft_win)
+        self.label_10.setMinimumSize(QtCore.QSize(128, 30))
+        self.label_10.setMaximumSize(QtCore.QSize(128, 15))
+        self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_10.setObjectName("label_10")
+        self.horizontalLayout_9 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_9.setObjectName("horizontalLayout_9")
+        self.horizontalLayout_9.addWidget(self.label_10)
+        self.textEdit_9 = QtWidgets.QTextEdit(fft_win)
+        self.textEdit_9.setObjectName("textEdit_9")
+        self.horizontalLayout_9.addWidget(self.textEdit_9)
+        self.verticalLayout.addLayout(self.horizontalLayout_9)
+
+        self.label_11 = QtWidgets.QLabel(fft_win)
+        self.label_11.setMinimumSize(QtCore.QSize(128, 30))
+        self.label_11.setMaximumSize(QtCore.QSize(128, 15))
+        self.label_11.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_11.setObjectName("label_11")
+        self.horizontalLayout_10 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_10.setObjectName("horizontalLayout_10")
+        self.horizontalLayout_10.addWidget(self.label_11)
+        self.textEdit_10 = QtWidgets.QTextEdit(fft_win)
+        self.textEdit_10.setObjectName("textEdit_10")
+        self.horizontalLayout_10.addWidget(self.textEdit_10)
+        self.verticalLayout.addLayout(self.horizontalLayout_10)
 
         ######
         self.horizontalLayout = QtWidgets.QHBoxLayout()
@@ -144,7 +184,7 @@ class Ui_fft_win(object):
 
     def retranslateUi(self, fft_win):
         _translate = QtCore.QCoreApplication.translate
-        fft_win.setWindowTitle(_translate("fft_win", "Fast Fourier Transform"))
+        fft_win.setWindowTitle(_translate("fft_win", "Butterworth Band Pass"))
         self.label_4.setText(_translate("fft_win", "Variables"))
         self.label_4.setFont(QtGui.QFont("Arial",weight=QtGui.QFont.Bold))
         self.label.setText(_translate("fft_win", "Select Channel: "))
@@ -154,6 +194,9 @@ class Ui_fft_win(object):
         self.label_6.setText(_translate("fft_win", "Nyquist: "))
 
         self.label_7.setText(_translate("fft_win", "Start Time(ms): "))
-        self.label_8.setText(_translate("fft_win", "End Time(ms): "))        
+        self.label_8.setText(_translate("fft_win", "End Time(ms): "))
+        self.label_9.setText(_translate("fft_win", "Filter Order: ")) 
+        self.label_10.setText(_translate("fft_win", "Lower Cutoff(Hz): ")) 
+        self.label_11.setText(_translate("fft_win", "Higher Cutoff(Hz): "))        
         self.pushButton.setText(_translate("fft_win", "Plot to Graph"))
 
