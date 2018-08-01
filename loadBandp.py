@@ -5,7 +5,6 @@ class Ui_loadBandp_win(object):
 
     def send_vars(self, base, data):
         #code: sends variables to plotter function
-        # try:
         ch_num = int(self.textEdit.toPlainText())
         start_t = int(self.textEdit_6.toPlainText())
         end_t = int(self.textEdit_7.toPlainText())
@@ -18,8 +17,6 @@ class Ui_loadBandp_win(object):
         nyquist = int(self.textEdit_5.toPlainText())
         base.chan_pass_plot(data, ch_num, samp_rate, num_samps, time_len,
                           nyquist, start_t, end_t, order, lowcut, highcut)
-        # except:
-            # base.error()
 
     def setupUi9(self, base, fft_win, data):
         fft_win.setObjectName("fft_win")
@@ -99,6 +96,7 @@ class Ui_loadBandp_win(object):
         self.horizontalLayout_9.addWidget(self.label_10)
         self.textEdit_9 = QtWidgets.QTextEdit(fft_win)
         self.textEdit_9.setObjectName("textEdit_9")
+        self.textEdit_9.setText(str('0.1'))
         self.horizontalLayout_9.addWidget(self.textEdit_9)
         self.verticalLayout.addLayout(self.horizontalLayout_9)
 

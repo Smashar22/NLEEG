@@ -22,12 +22,8 @@ class Ui_setMarker(object):
 
         if (file["mark_csv"] == "_empty_"):
             file_bool = False
-            # try:
             base.set1Mark(file, file_bool, time_dur, time_pos, m_label)
-            # except:
-            # print("Fill all fields to add a marker 111")
         else:
-            # use file.csv, add it, and add to plot
             file_bool = True
             try:
                 base.set1Mark(file, file_bool, time_dur, time_pos, m_label)

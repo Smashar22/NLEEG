@@ -1,5 +1,5 @@
-# Basic user script - 1 
-# This script shows the basic variables
+# Example user script - 1 
+# This script shows the basic variables and plots your EEG data to the 'Algorithm Plotter'
 
 
 N = data["num_samples"]                     #this is your eeg data x-axis (time)

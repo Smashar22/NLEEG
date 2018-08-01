@@ -8,7 +8,7 @@ class nleegStart(QtWidgets.QWidget):
     def __init__(self):
         super(self.__class__, self).__init__()
         self.setupCard()
-        QtCore.QTimer.singleShot(1000, self.close) #2400 best
+        QtCore.QTimer.singleShot(2400, self.close)
 
     def setupCard(self):
         self.lab = QtWidgets.QLabel()
@@ -36,13 +36,6 @@ class nleegApp(QtWidgets.QWidget, nleeg.Ui_Form, loadFile.Ui_inputFile,
         self.setupUi(self, data)
 
     def varies(self):
-        # Nyquist = sample_rate/2.
-        # fneeg = raw_input("Filename (full path & extension): ")
-        # t = int(raw_input("How many secs in total of EEG?: "))
-        # ch = int(raw_input("How many channels of EEG?: "))
-        # le = t*sample_rate  # length of recording = time x sample_rate
-        # fid = open(fneeg, 'r')
-        # EEG = fromfile(fneeg, int16)
         var_dic = {"file_csv":"_empty_", "ch_cnt":0, "time_ln_msec":0, 
                    "samp_rate":0, "num_samples": 0, "nyquist":0, 
                    "mark_csv": "_empty_", "mark_csv_add": "_empty_",

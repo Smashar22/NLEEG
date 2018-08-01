@@ -4,20 +4,6 @@ import nleeg
 
 class Ui_scalpMap(object):
 
-    """
-    def load_map(self):
-        cwd = os.getcwd()
-        self.pixm = QtGui.QPixmap(cwd + '/scalp_cap.png')
-        self.map_image.setPixmap(self.pixm)
-        self.vbox = QtWidgets.QVBoxLayout()
-        self.setLayout(self.vbox)
-        self.setMinimumSize(QtCore.QSize(526, 526))
-        self.setMaximumSize(QtCore.QSize(526, 526))
-        self.vbox.addWidget(self.map_image)
-        # self.move(400, 180)
-        # self.show()
-    """
-
     def setupUi4(self, scalpMap):
         scalpMap.setObjectName("scalpMap")
         scalpMap.resize(450, 450)

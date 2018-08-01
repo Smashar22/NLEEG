@@ -1,13 +1,11 @@
-import os, sys, csv, time, math
-import pandas as pd
+import os, csv, math
 import numpy as np
 from PyQt5 import QtCore, QtWidgets, QtGui
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from sklearn import preprocessing
-from scipy.fftpack import fft, ifft, rfft
-from scipy.signal import lfilter, hilbert, butter, freqz
+from scipy.fftpack import fft
+from scipy.signal import hilbert, butter, freqz, filtfilt
 from loadFile import Ui_inputFile
 from setMarker import Ui_setMarker
 from scalpMap import Ui_scalpMap
@@ -19,11 +17,12 @@ from loadHilbert import Ui_hilbert_win
 from loadBandp import Ui_loadBandp_win
 from chanPass import Ui_chanPass
 
-import time
 
 
 class Ui_Form(object):
 
+# ---------------
+# Input Functions
     def fill_info(self, data):
         #code: populates info panel with eeg data specifics
         self.label.setText("")
@@ -119,37 +118,15 @@ class Ui_Form(object):
         data["nyquist"] = data["samp_rate"]/2
         ##########
 
-        t1 = time.time()
-
-        """
-        dataframe = pd.read_csv(data["file_csv"], sep = ',', header = None)
-        ndarr = dataframe.as_matrix()
-        ndarr = ndarr.astype(int)
-        ndarr = np.swapaxes(ndarr, 0, 1)
-        """
-
         ndarr = np.loadtxt(data["file_csv"], 
                   dtype = float,
                   unpack = True, 
                   delimiter = ',')
 
-        t2 = time.time()
-        total = t2 - t1
-
-        print(total)
-
-        """ old method
-        ndarr = np.loadtxt(data["file_csv"], 
-                  dtype = float,
-                  unpack = True, 
-                  delimiter = ',')
-        """
 
         ####### IMPORTANT ########
         self.ndarr = ndarr # source ndarray
         ####### IMPORTANT ########
-
-        # substitute loadtxt for read_csv
 
         self.x_axis_r = np.arange(data["num_samples"])
         path = path[:-len("/data_eeg/")] #reset directory to Nleeg
@@ -160,7 +137,7 @@ class Ui_Form(object):
         ####### IMPORTANT ########
 
         # Plot layering
-        x = ch_cnt
+        # x = ch_cnt
         self.lines.append(np.hstack(ndarr[:, 0, np.newaxis]))
         temp = self.figure.add_subplot(ch_cnt, 1, 1) # facecolor='cream'
         self.plot_arr.append(temp)
@@ -198,8 +175,6 @@ class Ui_Form(object):
             plt.yticks(np.arange(int(line.min()), int(line.max()+2), int(R)), fontsize=4)
             plt.ylabel('Ch.'+str(y), fontsize=8, weight='bold', verticalalignment= 'center',
                        horizontalalignment= 'right', rotation='horizontal')
-            # self.plot_arr[z].grid()
-            # self.plot_arr[z].spines['right'].set_visible(False)
             self.plot_arr[z].spines['top'].set_visible(False)
             self.plot_arr[z].spines['bottom'].set_visible(False)
             plt.xticks(np.arange(0, self.xlim_max, 
@@ -209,7 +184,6 @@ class Ui_Form(object):
         self.figure.set_size_inches(self.xinch, self.yinch, forward=True)
         self.figure.tight_layout(pad=0.3, w_pad=0.2, h_pad=0.2)
         self.canvas = FigureCanvas(self.figure)
-        # self.figure.clear() #clears data, but doesn't renew size
         self.canvas.draw()
         self.scroll.setWidget(self.canvas) #these four lines refresh plotter
         self.add_tools()
@@ -262,7 +236,6 @@ class Ui_Form(object):
             file.close()
         return array
 
-    #mostly finished
     def loadUpMark(self, file, file_bool):
         # code: Loads markers onto current .csv and plot
         cwd = os.getcwd() + '/data_events/'
@@ -351,14 +324,14 @@ class Ui_Form(object):
             self.figure2.clear()
             fs = data["samp_rate"]
             nyq = data["nyquist"]
-
             low = lowcut/nyq
             high = highcut/nyq
-            b, a = butter(order, [low, high], btype='band')
-            w, h = freqz(b, a, worN=2000)
+            q, z = butter(order, [low, high], btype='band')
+            y, n = freqz(q, z, worN=2000)
 
             d = self.figure2.add_subplot(1,1,1)
-            d.plot((fs*0.5/ np.pi) * w, abs(h), label="Order %d Frequency Response" % order)
+            d.plot((fs*0.5/ np.pi) * y, abs(n), label="Order %d Frequency Response" % order)
+            d.axvline(x=highcut, color='r', linestyle=':', linewidth=1.5, label="%d Hz - Highcut Frequency" % highcut)
             d.set_xlabel('Frequency (Hz)')
             d.set_ylabel('Gain')
             d.legend(loc='best')
@@ -367,7 +340,7 @@ class Ui_Form(object):
         # Prep the chopped data and send to new plot window
         orig_plot = self.lines[(ch_num-1)][start_t:end_t]
         pass_plot = self.lines[(ch_num-1)][start_t:end_t]
-        pass_plot = lfilter(b, a, pass_plot)
+        pass_plot = filtfilt(q, z, orig_plot, padlen=100)
         nsamps = end_t - start_t
         T = 1.0 / samp_rate
         time = np.linspace(0, nsamps*T, nsamps, endpoint = False)
@@ -379,17 +352,7 @@ class Ui_Form(object):
         self.window10.show()
 
     def nleeg_fft(self, data):
-
-        """
-        # spell out the args that were passed to the Matlab function
-        N = 10
-        Fc = 40
-        Fs = 1600
-        # provide them to firwin
-        # h = scipy.signal.firwin(numtaps=N, cutoff=40, nyq=Fs/2)
-        # 'x' is the time-series data you are filtering
-        # y = scipy.signal.hfilter(h, 1.0, x)
-        """
+        #code: Plots the FFT of the EEG time series
         if data["ch_cnt"] == 0:
             warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'No Data Has Been Loaded To Plotter',
                                     QtWidgets.QMessageBox.Ok)
@@ -405,9 +368,7 @@ class Ui_Form(object):
 
     def plot_fft(self, data, ch_num, samp_rate, num_samps, time_ln, nyquist, start_t, end_t):
         # code: computes the fft and plots it
-        # scaled = preprocessing.scale(self.lines[(ch_num-1)])
 
-        print(start_t, end_t)
 
         if start_t > end_t:
             # error msg: incorrect values
@@ -427,25 +388,23 @@ class Ui_Form(object):
                 pass
         else:
             self.figure2.clear()
-            N = num_samps # Number of samplepoints
-            Fs = samp_rate # Sample Rate
-            # sample spacing
-            T = 1.0 / Fs # N_samps*T (#samples x sample period) is the sample spacing.
-            N_fft = samp_rate/100        # Number of bins (chooses granularity), samp_rate/10
-            x = np.linspace(0.0, N*T, N) # the interval
-            y = self.lines[(ch_num-1)][start_t:end_t]   # the signal
+            N = num_samps
+            T = 1.0 / samp_rate
+            N_fft = samp_rate/5       
+            # x = np.linspace(0, N * T, N)
+            y = self.lines[(ch_num-1)][start_t:end_t]
 
-            # mean adjusted
-            m_rem = np.ones_like(y)*np.mean(y)
+            m_rem = np.ones_like(y)*np.mean(y) # mean adjusted
             y = y - m_rem
             yf = fft(y, n=N_fft) # Compute the fft
-            xf = np.arange(0,Fs,Fs/N_fft)
-            # xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
+            xf = np.arange(0,samp_rate,samp_rate/N_fft)
             d = self.figure2.add_subplot(1,1,1)
+            d.set_xlim(xmin=0, xmax=100)
+            d.set_xticks(np.arange(0, 100, 10))
+            d.grid()
             d.plot(xf,np.abs(yf), lw=2.0, c='b')
             d.set_ylabel('FFT magnitude (power)')
             d.set_xlabel('Frequency (Hz)')
-            # d.set_title('FFT', fontsize= 20, fontweight="bold")
             self.canvas2.draw()
 
     def nleeg_hilbert(self, data):
@@ -463,10 +422,9 @@ class Ui_Form(object):
             temp7.setupUi7(self, self.window7, data)
             self.window7.show()
 
-    def plot_hilb(self, data, ch_num, samp_rate, num_samps, time_ln, nyquist, start_t, end_t):
+    def plot_hilb(self, data, ch_num, samp_rate, num_samps, time_ln, nyq, 
+                                                              start_t, end_t):
         # code: computes the hilbert transform and plots it
-
-        print(start_t, end_t)
 
         self.figure2.clear()
         a = self.figure2.add_subplot(1,1,1)
@@ -475,33 +433,28 @@ class Ui_Form(object):
         num_samps = end_t-start_t
         time = np.arange(0, num_samps)
 
-        sig = self.lines[(ch_num-1)][start_t:end_t]
-
-        # removing the mean of the signal
-        mean_removed = np.ones_like(sig)*np.mean(sig)
-        sig = sig - mean_removed
+        sig = self.lines[(ch_num-1)][start_t:end_t] #original
+        
+        mean_rem = np.ones_like(sig)*np.mean(sig) # remove mean
+        sig = sig - mean_rem
 
         an_sig = hilbert(sig)
 
-        # envelope = math.sqrt((y.real**2) + (y.imag**2))
         env_real = an_sig.real ** 2
         env_imag = an_sig.imag ** 2
         combine = env_real + env_imag
         envelope = np.sqrt(combine)
         # print(envelope)
         inst_phase = np.unwrap(np.angle(an_sig))
-        inst_freq = (np.diff(inst_phase)/(2*np.pi)*samp_rate)
 
-        imagine = a.plot(time, an_sig.imag, color = 'black', linewidth=0.4, label="Imaginary")
-        real = a.plot(time, an_sig.real, color = 'blue', linewidth=0.4, label="Real")
-        envy = a.plot(time, envelope, color = 'green', linewidth=0.4, label="Envelope")
-        # plt.legend()
+        a.plot(time, an_sig.imag, color = 'black', linewidth=0.6, label="Imaginary")
+        # a.plot(time, an_sig.real, color = 'blue', linewidth=0.4, label="Real")
+        a.plot(time, envelope, color = 'green', linewidth=0.6, label="Envelope")
         a.set_ylabel('Amplitude', fontsize=8)
         a.set_xlabel('Time', fontsize=8)
         plt.xticks(fontsize=6)
         plt.yticks(fontsize=6)
         a.legend(loc='best')
-        # a.set_title('Hilbert Transform', fontsize= 20, fontweight="bold")
         self.canvas2.draw()
 
 # --------------------
@@ -618,23 +571,8 @@ class Ui_Form(object):
                 data["tick_bool"] = True
             self.canvas.draw()
 
-
-        # self.window5 = QtWidgets.QWidget()
-        # temp5 = Ui_slice_D()
-        # temp5.setupUi5(self.window5, data)
-        # self.window5.show()
-
-        """
-        warn = QtWidgets.QMessageBox.question(self, 'Empty!', 'Unimplemented Feature',
-                                    QtWidgets.QMessageBox.Yes) #| QtWidgets.QMessageBox.No)
-        if warn == QtWidgets.QMessageBox.Yes:
-            print('Return to Main')
-        else:
-            pass
-        """
-
 #---------------------
-#
+# Setup UI and Misc Functions
     def user_plot(self, user_string, data):
         # code:plots the user's algorithm
         self.figure2.clear()
@@ -648,16 +586,6 @@ class Ui_Form(object):
                 print('^ Error message above ^')
             else:
                 pass
-
-        """
-        self.figure2.clear()
-        ax = self.figure2.add_subplot(1,1,1)
-        T = np.arange(0.0, 2.0, 0.01)
-        Q = 1 + np.sin(2*np.pi*T)
-        ax.plot(T, Q)
-        plt.title('Simple Example')
-        self.canvas2.draw()
-        """
 
     def add_algo_win(self, data):
         # creates the script window
@@ -844,11 +772,11 @@ class Ui_Form(object):
         self.horizontalLayout_2.addWidget(self.hilbert_btn)
         self.hilbert_btn.clicked.connect(lambda x:self.nleeg_hilbert(data))
 
-        self.save_btn = QtWidgets.QPushButton(Form)
-        self.save_btn.setEnabled(True)
-        self.save_btn.setObjectName("save_btn")
-        self.horizontalLayout_2.addWidget(self.save_btn)
-        #self.input_btn.clicked.connect(lambda x:self.hilbert(data))
+        #self.save_btn = QtWidgets.QPushButton(Form)
+        #self.save_btn.setEnabled(True)
+        #self.save_btn.setObjectName("save_btn")
+        #self.horizontalLayout_2.addWidget(self.save_btn)
+        #self.input_btn.clicked.connect()
 
         self.userAlgo_btn = QtWidgets.QPushButton(Form)
         self.userAlgo_btn.setObjectName("userAlgo_btn")
@@ -877,7 +805,7 @@ class Ui_Form(object):
         self.fft.setText(_translate("Form", "FFT"))
         self.hilbert_btn.setText(_translate("Form", "Hilbert Transform"))
         self.userAlgo_btn.setText(_translate("Form", "..."))
-        self.save_btn.setText(_translate("Form", "Save Csv"))
+        # self.save_btn.setText(_translate("Form", "Save Csv"))
 
 
 

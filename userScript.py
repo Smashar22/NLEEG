@@ -47,25 +47,29 @@ class Ui_user_script(object):
             self.textEdit.setText(self.textEdit.toPlainText() +
                 "\n\n #Apply your algorithm to the variables marked below") 
             self.textEdit.setText(self.textEdit.toPlainText() +
-                            "\n #Click Plot and NLEEG will take care of the rest")
+                            "\n #Click 'Plot Script' and the 'Algorithm Plotter' will display your data")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                        "\n\n\nself.lines = []   # contains all lines")
+                        "\n\n\n # self.lines[] contains all EEG lines, apply your algorithms to it")
             self.textEdit.setText(self.textEdit.toPlainText() +
                   "\n\nself.figure2.clear() \t\t\t #clears window for new plot")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                     "\nax = self.figure2.add_subplot(1,1,1) \t\t\t #adds plot")
+                     "\nax = self.figure2.add_subplot(1,1,1) \t\t #adds a plot")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                              "\nT = np.arange(0.0, 2.0, 0.01) \t\t\t #x axis ticks")
+                              "\nT = np.arange(0.0, 2.0, 0.01) \t\t #x axis ticks")
             self.textEdit.setText(self.textEdit.toPlainText() +
                               "\nQ = 1 + np.sin(2*np.pi*T) \t\t\t #use a sine wave as data")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                              "\nax.plot(T, Q) \t\t\t #plots variables T and Q")
+                              "\nax.plot(T, Q) \t\t\t\t #plots variables T and Q")
             self.textEdit.setText(self.textEdit.toPlainText() +
                              "\nself.canvas2.draw() \t\t\t #redraws the canvas")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                "\n\n# <--- Remove the hash marks at the front to uncomment code")                                      
+                "\n\n# <--- Remove the hash marks at the front to uncomment code")
             self.textEdit.setText(self.textEdit.toPlainText() +
-                                        "\n\n#Have Fun Plotting!")
+                "\n\n# Save Script will save to the 'user_scripts' folder, in this folder")
+            self.textEdit.setText(self.textEdit.toPlainText() +
+                "\n\n# You will also find some example scripts to paste in and plot")                                                       
+            self.textEdit.setText(self.textEdit.toPlainText() +
+                                        "\n\n# Have Fun Plotting!")
 
         self.verticalLayout.addWidget(self.textEdit)
         self.pushButton2 = QtWidgets.QPushButton(user_script)
